@@ -1,0 +1,9 @@
+git
+git status
+git add
+git commit -m "message"
+git log 查看提交歷史
+q 退出
+git log --oneline 歷史簡化版
+git diff "ID" -- "檔案名稱" 比對差異
+git checkout "ID" -- "檔案名稱" 還原
