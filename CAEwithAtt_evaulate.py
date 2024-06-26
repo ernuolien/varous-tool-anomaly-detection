@@ -74,7 +74,7 @@ scheduler = optim.lr_scheduler.MultiStepLR(
 
 
 
-model.load_state_dict(torch.load("voraus-ad-dataset-main\CAEwithAtt863.pth")) 
+model.load_state_dict(torch.load("voraus-ad-dataset-main\CAEwithAtt863.pth"))
 
 total_loss = 0
 model.eval()
