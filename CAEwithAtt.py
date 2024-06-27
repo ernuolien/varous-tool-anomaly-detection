@@ -19,6 +19,24 @@ class SelfAttention(nn.Module):
         outputs = (encoder_outputs * weights.unsqueeze(-1)).sum(dim=1)
         return outputs
 
+class SEBlock(nn.Module):
+    # reduction=8 -> 85.9 目前最高
+    def __init__(self, channel, reduction=8):
+        super(SEBlock, self).__init__()
+        self.avg_pool = nn.AdaptiveAvgPool1d(1)
+        self.fc = nn.Sequential(
+            nn.Linear(channel, channel // reduction, bias=False),
+            nn.ReLU(inplace=True),
+            nn.Linear(channel // reduction, channel, bias=False),
+            nn.Sigmoid()
+        )
+
+    def forward(self, x):
+        b, c, _ = x.size()
+        y = self.avg_pool(x).view(b, c)
+        y = self.fc(y).view(b, c, 1)
+        return x * y.expand_as(x)
+
 class Encoder(nn.Module):
     def __init__(self, in_channels, hidden_channels, latent_dim):
         super(Encoder, self).__init__()
@@ -34,21 +52,27 @@ class Encoder(nn.Module):
         
         self.conv1 = nn.Conv1d(16, 32, kernel_size=3, stride=2, padding=3)        
         self.self_attention1 = SelfAttention(32, 32)
+        self.se1 = SEBlock(32)
         
         self.conv2 = nn.Conv1d(32, 64, kernel_size=3, stride=2, padding=3)
         self.self_attention2 = SelfAttention(64, 64)
+        self.se2 = SEBlock(64)
         
         self.conv3 = nn.Conv1d(64, 128, kernel_size=3, stride=2, padding=3)
         self.self_attention3 = SelfAttention(128, 128)
+        self.se3 = SEBlock(128)
         
         self.conv4 = nn.Conv1d(128, 256, kernel_size=3, stride=2, padding=3)
         self.self_attention4 = SelfAttention(256, 256)
+        self.se4 = SEBlock(256)
         
         self.conv5 = nn.Conv1d(256, 512, kernel_size=3, stride=2, padding=3)
         self.self_attention5 = SelfAttention(512, 512)
+        self.se5 = SEBlock(512)
         
         self.conv6 = nn.Conv1d(512, 1024, kernel_size=3, stride=2, padding=3)
         self.self_attention6 = SelfAttention(1024, 1024)
+        self.se6 = SEBlock(1024)
 
         
 
@@ -88,31 +112,37 @@ class Encoder(nn.Module):
         x = x.transpose(1, 2)
         x = self.self_attention1(x.unsqueeze(1)).squeeze(1)
         x = x.transpose(1, 2)
+        x = self.se1(x)
         
         x = F.relu(self.conv2(x))
         x = x.transpose(1, 2)
         x = self.self_attention2(x.unsqueeze(1)).squeeze(1)
         x = x.transpose(1, 2)
+        x = self.se2(x)
         
         x = F.relu(self.conv3(x))
         x = x.transpose(1, 2)
         x = self.self_attention3(x.unsqueeze(1)).squeeze(1)
         x = x.transpose(1, 2)
+        x = self.se3(x)
         
         x = F.relu(self.conv4(x))
         x = x.transpose(1, 2)
         x = self.self_attention4(x.unsqueeze(1)).squeeze(1)
         x = x.transpose(1, 2)
+        x = self.se4(x)
         
         x = F.relu(self.conv5(x))
         x = x.transpose(1, 2)
         x = self.self_attention5(x.unsqueeze(1)).squeeze(1)
         x = x.transpose(1, 2)
+        x = self.se5(x)
         
         x = F.relu(self.conv6(x))
         x = x.transpose(1, 2)
         x = self.self_attention6(x.unsqueeze(1)).squeeze(1)
         x = x.transpose(1, 2)
+        x = self.se6(x)
         # # 应用自注意力层
         
         x = torch.flatten(x, start_dim=1)
