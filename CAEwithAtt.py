@@ -70,9 +70,9 @@ class Encoder(nn.Module):
         self.self_attention5 = SelfAttention(512, 512)
         self.se5 = SEBlock(512)
         
-        self.conv6 = nn.Conv1d(512, 1024, kernel_size=3, stride=2, padding=3)
-        self.self_attention6 = SelfAttention(1024, 1024)
-        self.se6 = SEBlock(1024)
+        # self.conv6 = nn.Conv1d(512, 1024, kernel_size=3, stride=2, padding=3)
+        # self.self_attention6 = SelfAttention(1024, 1024)
+        # self.se6 = SEBlock(1024)
 
         
 
@@ -85,7 +85,7 @@ class Encoder(nn.Module):
         # out_length3 = (out_length2 + 2 * 3 - 7) // 2 + 1
 
         # 计算展平后的线性层输入维度
-        flatten_dim = 23552
+        flatten_dim = 20992
         self.fc = nn.Linear(flatten_dim, latent_dim)
 
     def forward(self, x):
@@ -138,11 +138,11 @@ class Encoder(nn.Module):
         x = x.transpose(1, 2)
         x = self.se5(x)
         
-        x = F.relu(self.conv6(x))
-        x = x.transpose(1, 2)
-        x = self.self_attention6(x.unsqueeze(1)).squeeze(1)
-        x = x.transpose(1, 2)
-        x = self.se6(x)
+        # x = F.relu(self.conv6(x))
+        # x = x.transpose(1, 2)
+        # x = self.self_attention6(x.unsqueeze(1)).squeeze(1)
+        # x = x.transpose(1, 2)
+        # x = self.se6(x)
         # # 应用自注意力层
         
         x = torch.flatten(x, start_dim=1)
@@ -152,8 +152,8 @@ class Encoder(nn.Module):
 class Decoder(nn.Module):
     def __init__(self, out_channels=130 , hidden_channels=130, latent_dim=64):
         super(Decoder, self).__init__()
-        self.fc = nn.Linear(latent_dim, 23552)
-        self.deconv1 = nn.ConvTranspose1d(1024, 512, kernel_size=3, stride=2, padding=3, output_padding=1)
+        self.fc = nn.Linear(latent_dim, 20992)
+        # self.deconv1 = nn.ConvTranspose1d(1024, 512, kernel_size=3, stride=2, padding=3, output_padding=1)
         
         
         self.deconv2 = nn.ConvTranspose1d(512, 256, kernel_size=3, stride=2, padding=2, output_padding=1)
@@ -169,8 +169,8 @@ class Decoder(nn.Module):
 
     def forward(self, x):
         x = self.fc(x)
-        x = x.view(-1, 1024, 23)
-        x = F.relu(self.deconv1(x))
+        x = x.view(-1, 512, 41)
+        # x = F.relu(self.deconv1(x))
         
         x = F.relu(self.deconv2(x))
         x = F.relu(self.deconv3(x))
