@@ -38,7 +38,7 @@ class SEBlock(nn.Module):
         return x * y.expand_as(x)
 
 class Encoder(nn.Module):
-    def __init__(self, in_channels, hidden_channels, latent_dim):
+    def __init__(self, latent_dim):
         super(Encoder, self).__init__()
         # self.conv1 = nn.Conv1d(in_channels, hidden_channels, kernel_size=3, stride=2, padding=3)
         # self.self_attention1 = SelfAttention(hidden_channels, hidden_channels)
@@ -89,21 +89,6 @@ class Encoder(nn.Module):
         self.fc = nn.Linear(flatten_dim, latent_dim)
 
     def forward(self, x):
-        # x = x.transpose(1, 2)
-        # x = F.relu(self.conv1(x))
-        # x = x.transpose(1, 2)
-        # x = self.self_attention1(x.unsqueeze(1)).squeeze(1)
-        # x = x.transpose(1, 2)
-        # x = F.relu(self.conv2(x))
-        # x = x.transpose(1, 2)
-        # x = self.self_attention2(x.unsqueeze(1)).squeeze(1)
-        # x = x.transpose(1, 2)
-        # x = F.relu(self.conv3(x))
-        # x = x.transpose(1, 2)
-        # x = self.self_attention3(x.unsqueeze(1)).squeeze(1)
-        # x = x.transpose(1, 2)
-        # x = torch.flatten(x, start_dim=1)
-        # x = self.fc(x)
 
         x = x.transpose(1, 2)
         x = F.relu(self.initcov(x))
@@ -150,7 +135,7 @@ class Encoder(nn.Module):
         return x
 
 class Decoder(nn.Module):
-    def __init__(self, out_channels=130 , hidden_channels=130, latent_dim=64):
+    def __init__(self, latent_dim):
         super(Decoder, self).__init__()
         self.fc = nn.Linear(latent_dim, 20992)
         # self.deconv1 = nn.ConvTranspose1d(1024, 512, kernel_size=3, stride=2, padding=3, output_padding=1)
@@ -184,10 +169,10 @@ class Decoder(nn.Module):
         return x
 
 class ConvAutoencoder(nn.Module):
-    def __init__(self, in_channels=130, hidden_channels=256, latent_dim=64, out_channels=130):
+    def __init__(self, latent_dim=64):
         super(ConvAutoencoder, self).__init__()
-        self.encoder = Encoder(in_channels, hidden_channels, latent_dim)
-        self.decoder = Decoder(out_channels, hidden_channels, latent_dim)
+        self.encoder = Encoder(latent_dim)
+        self.decoder = Decoder(latent_dim)
         
     def forward(self, x):
         x = self.encoder(x)
