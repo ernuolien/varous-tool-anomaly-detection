@@ -26,7 +26,7 @@ print(DEVICE)
 # Define the training configuration and hyperparameters of the model.
 configuration = Configuration(
     columns="machine",
-    epochs=70,
+    epochs=100,
     frequencyDivider=1,
     trainGain=1.0,
     seed=177,
