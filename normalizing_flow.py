@@ -20,9 +20,15 @@ def get_loss(inputs: Tensor, outputs: Tensor) -> Tensor:
         The loss of the batch.
     """
    
-    number = numpy.prod(inputs.shape[1:])
-    sum_dimension = tuple(range(1, inputs.dim()))
-    return torch.mean(torch.sum((inputs-outputs)**2, dim=sum_dimension)) / number
+    # number = numpy.prod(inputs.shape[1:])
+    # length = inputs.shape[0]
+    # sum_dimension = tuple(range(1, inputs.dim()))
+    # return torch.mean(torch.sum((inputs-outputs)**2, dim=sum_dimension)) / number
+    mse = torch.mean((inputs - outputs) ** 2, dim=[1, 2])  # 在seq_length和feature_dim上取均值
+    # 对所有样本的均方误差求平均
+    return torch.mean(mse)
+
+
 # def get_loss(z_space: Tensor, jac: Tensor) -> Tensor:
 #     """Calculate the loss of a batch.
 
@@ -48,9 +54,11 @@ def get_loss_per_sample(inputs: Tensor, outputs: Tensor) -> Tensor:
     Returns:
         The loss per sample.
     """
+    length = inputs.shape[0]
+    number = numpy.prod(inputs.shape[1:])
     sum_dimension = tuple(range(1, inputs.dim()))
     # loss = 0.5 * torch.sum(z_space**2, dim=sum_dimension) - jac
-    loss = torch.sum((inputs-outputs)**2, dim=sum_dimension)
+    loss = torch.sum((inputs-outputs)**2, dim=sum_dimension) / number
     return loss
 
 # def get_loss_per_sample(z_space: Tensor, jac: Tensor) -> Tensor:
