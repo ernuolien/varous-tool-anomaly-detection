@@ -5,11 +5,19 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 import numpy
+import numpy as np
 import pandas
 import torch
 import torch.backends.cudnn
 from sklearn import metrics
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import recall_score
+from sklearn.metrics import precision_score
+from sklearn.metrics import f1_score
 from torch import optim
+import seaborn as sns
+import matplotlib.pyplot as plt
+from sklearn.metrics import precision_recall_curve
 import time
 from configuration import Configuration
 from normalizing_flow import NormalizingFlow, get_loss, get_loss_per_sample
@@ -75,7 +83,7 @@ scheduler = optim.lr_scheduler.MultiStepLR(
 
 
 
-model.load_state_dict(torch.load("voraus-ad-dataset-main\CAE_model3.pth"))
+model.load_state_dict(torch.load("CAE_model3.pth"))
 
 total_loss = 0
 model.eval()
@@ -84,14 +92,7 @@ with torch.no_grad():
     result_list = []
     for _, (tensors, labels) in enumerate(test_dl):
         inputs = tensors.float().to(DEVICE)
-        # print(labels.shape)
-        start_time = time.time()
         outputs = model(inputs)
-        # loss = criterion(outputs, inputs)
-        end_time = time.time()
-        prediction_time = end_time - start_time
-        # print(loss)
-        # total_loss += loss.item()
         loss_per_sample = get_loss_per_sample(inputs, outputs)
         # print(loss_per_sample)
         for j in range(loss_per_sample.shape[0]):
@@ -120,4 +121,87 @@ print(f"auroc(mean)={auroc_mean:5.3f}")
 print("單次預測花費的時間：", prediction_time, "秒")
 
 
+#找出最佳threshold
+precision, recall, thresholds = metrics.precision_recall_curve(results["anomaly"], results["score"].values, pos_label=True)
+f1_scores = 2 * (precision * recall) / (precision + recall)
+optimal_idx = numpy.argmax(f1_scores)
+optimal_threshold = thresholds[optimal_idx]
+print("Optimal Threshold:", optimal_threshold)
 
+#不分異常種類 使用最佳threshold判定所有資料是否異常
+precision, recall, thresholds = precision_recall_curve(results["anomaly"], results["score"].values, pos_label=True)
+predicted_labels = (np.array(results["score"]) >= optimal_threshold).astype(int)
+
+accuracy = np.mean(predicted_labels == results["anomaly"])
+recall = recall[optimal_idx]
+precision = precision[optimal_idx]
+f1 = f1_scores[optimal_idx]
+
+print(f'Accuracy: {accuracy:.4f}')
+print(f'Recall: {recall:.4f}')
+print(f'Precision: {precision:.4f}')
+print(f'最佳F1 Score: {f1:.4f}')
+
+# 計算正常數據中的分數（score）的第65百分位數，並將其用作threshold。
+actual_labels = results["anomaly"]
+anomaly_scores = results["score"].values
+normal_anomaly_scores = results[results['anomaly'] == False]['score']
+threshold = numpy.percentile(normal_anomaly_scores, 65)
+predicted_labels = [1 if score > threshold else 0 for score in anomaly_scores]
+accuracy = accuracy_score(actual_labels, predicted_labels)
+recall = recall_score(actual_labels, predicted_labels)
+precision = precision_score(actual_labels, predicted_labels)
+f1score = f1_score(actual_labels, predicted_labels)
+
+print("Accuracy:", accuracy)
+print("recall ", recall)
+print("precision ", precision)
+print("最現實f1score ", f1score)
+# predicted_labels = [1 if score > optimal_threshold else 0 for score in anomaly_scores]
+conf_matrix = metrics.confusion_matrix(actual_labels, predicted_labels)
+
+# 创建热图
+sns.set(font_scale=1.7)
+sns.heatmap(conf_matrix, annot=True, fmt='d', cmap='Blues', xticklabels=['Pred Normal', 'Pred Anomaly'], yticklabels=['True Normal', 'True Anomaly'])
+plt.xlabel('Predicted Label')
+plt.ylabel('True Label')
+plt.title('Confusion Matrix')
+plt.show()
+print("t")
+
+#區分不同異常的最佳threshold計算各項指標(超爛)
+
+for category in ANOMALY_CATEGORIES:
+    dfn = results[(results["category"] == category.name) | (~results["anomaly"])]
+    fpr, tpr, thresholds = metrics.roc_curve(dfn["anomaly"], dfn["score"].values, pos_label=True)
+    optimal_idx = np.argmax(tpr - fpr)
+    optimal_threshold = thresholds[optimal_idx]
+    # print("Optimal Threshold:", optimal_threshold)
+    
+    # 计算 auroc
+    auroc = metrics.auc(fpr, tpr)
+    aurocs.append(auroc)
+    # print(f'{category.name}, auroc={auroc:5.3f},')
+    aurocs = []
+    acc_list = []
+    re_list = []
+    pre_list = []
+    f1_list = []
+    # 根据最佳阈值计算预测标签
+    predicted_labels = (dfn["score"].values >= optimal_threshold).astype(int)
+    true_labels = dfn["anomaly"].values.astype(int)
+    
+    # 计算准确率
+    accuracy = metrics.accuracy_score(true_labels, predicted_labels)
+    acc_list.append(accuracy)
+    # 计算召回率
+    recall = metrics.recall_score(true_labels, predicted_labels)
+    re_list.append(recall)
+    # 计算精确率
+    precision = metrics.precision_score(true_labels, predicted_labels)
+    pre_list.append(precision)
+    # 计算 F1 分数
+    f1 = metrics.f1_score(true_labels, predicted_labels)
+    f1_list.append(f1)
+    # 打印指标
+    print(f'{category.name}, accuracy={accuracy:5.3f}, recall={recall:5.3f}, precision={precision:5.3f}, f1_score={f1:5.3f}')
