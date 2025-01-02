@@ -3,7 +3,7 @@
 import random
 from pathlib import Path
 from typing import Dict, List, Optional
-from sklearn.metrics import f1_score, precision_recall_curve
+from sklearn.metrics import precision_recall_curve
 import numpy as np
 import pandas
 import torch
