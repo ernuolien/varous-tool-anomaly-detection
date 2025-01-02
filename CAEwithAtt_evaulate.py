@@ -161,11 +161,9 @@ for category in ANOMALY_CATEGORIES:
 
 
 #找出最佳threshold
-
 precision, recall, thresholds = precision_recall_curve(results["anomaly"], results["score"].values, pos_label=True)
 f1_scores = 2 * (precision * recall) / (precision + recall)
 optimal_idx = np.argmax(f1_scores)
-print("opimal_idx:", optimal_idx)
 optimal_threshold = thresholds[optimal_idx]
 print("optimal threshold:", optimal_threshold)
 
