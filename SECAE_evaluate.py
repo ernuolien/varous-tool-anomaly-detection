@@ -20,7 +20,7 @@ from SECAE import SECAutoEncoder
 DETERMINISTIC_CUDA = False
 DATASET_PATH = Path.home() / "Downloads" / "voraus-ad-dataset-100hz.parquet"
 MODEL_PATH: Optional[Path] = Path.cwd() / "model.pth"
-DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+DEVICE = torch.device("cpu" if torch.cuda.is_available() else "cpu")
 configuration = Configuration(
     columns="machine",
     epochs=70,
@@ -74,7 +74,7 @@ scheduler = optim.lr_scheduler.MultiStepLR(
 
 
 
-model.load_state_dict(torch.load("model.pth"))
+model.load_state_dict(torch.load("SECAEmodel_865.pth"))
 
 total_loss = 0
 model.eval()
@@ -118,5 +118,26 @@ auroc_mean = aurocs_array.mean()
 print(f"auroc(mean)={auroc_mean:5.3f}")
 print("單次預測花費的時間：", prediction_time, "秒")
 
+
+precision, recall, thresholds = metrics.precision_recall_curve(results["anomaly"], results["score"].values, pos_label=True)
+f1_scores = 2 * (precision * recall) / (precision + recall)
+optimal_idx = numpy.argmax(f1_scores)
+optimal_threshold = thresholds[optimal_idx]
+
+print("Optimal Threshold:", optimal_threshold)
+# 计算 auroc
+# 计算基于最佳阈值的预测标签
+predicted_labels = (numpy.array(dfn["score"]) >= optimal_threshold).astype(int)
+
+# 计算并打印准确率、召回率、精确率和 F1 分数
+accuracy = numpy.mean(predicted_labels == dfn["anomaly"])
+recall = recall[optimal_idx]
+precision = precision[optimal_idx]
+f1 = f1_scores[optimal_idx]
+
+print(f'Accuracy: {accuracy:.3f}')
+print(f'Recall: {recall:.3f}')
+print(f'Precision: {precision:.3f}')
+print(f'F1 Score: {f1:.3f}')
 
 
