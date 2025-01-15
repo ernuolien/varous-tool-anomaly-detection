@@ -12,17 +12,21 @@ from sklearn import metrics
 from torch import optim
 
 from configuration import Configuration
-from normalizing_flow import NormalizingFlow, get_loss, get_loss_per_sample
+from normalizing_flow import  get_loss, get_loss_per_sample
 from voraus_ad import ANOMALY_CATEGORIES, Signals, load_torch_dataloaders
 # from CAE import ConvAutoencoder,Encoder,Decoder
 from CAEwithAtt import ConvAutoencoder
 # If deterministic CUDA is activated, some calculations cannot be calculated in parallel on the GPU.
 # The training will take much longer but is reproducible.
 DETERMINISTIC_CUDA = False
-DATASET_PATH = Path.home() / "Downloads" / "voraus-ad-dataset-100hz.parquet"
+# DATASET_PATH = Path.home() / "Downloads" / "voraus-ad-dataset-100hz.parquet"
+DATASET_PATH: Optional[Path] = Path.cwd() / "voraus-ad-dataset-100hz.parquet"
 MODEL_PATH: Optional[Path] = Path.cwd() / "model.pth"
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+DEVICE = torch.device("cuda")
 print(DEVICE)
+print(torch.version.cuda)  # 显示 PyTorch 支持的 CUDA 版本
+print(torch.cuda.is_available())
 # Define the training configuration and hyperparameters of the model.
 configuration = Configuration(
     columns="machine",

@@ -19,15 +19,16 @@ from sklearn.metrics import confusion_matrix
 from torch import optim
 import time
 from configuration import Configuration
-from normalizing_flow import NormalizingFlow, get_loss, get_loss_per_sample
+from normalizing_flow import get_loss, get_loss_per_sample
 from voraus_ad import ANOMALY_CATEGORIES, Signals, load_torch_dataloaders
 from CAEwithAtt import ConvAutoencoder
 # If deterministic CUDA is activated, some calculations cannot be calculated in parallel on the GPU.
 # The training will take much longer but is reproducible.
 DETERMINISTIC_CUDA = False
-DATASET_PATH = Path.home() / "Downloads" / "voraus-ad-dataset-100hz.parquet"
+DATASET_PATH: Optional[Path] = Path.cwd() / "voraus-ad-dataset-100hz.parquet"
 MODEL_PATH: Optional[Path] = Path.cwd() / "model.pth"
-DEVICE = torch.device("cpu" if torch.cuda.is_available() else "cpu")
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(DEVICE)
 configuration = Configuration(
     columns="machine",
     epochs=70,
@@ -81,7 +82,7 @@ scheduler = optim.lr_scheduler.MultiStepLR(
 
 
 
-model.load_state_dict(torch.load("CAEwithSESAmodel871.pth"))
+model.load_state_dict(torch.load("model.pth"))
 
 total_loss = 0
 model.eval()

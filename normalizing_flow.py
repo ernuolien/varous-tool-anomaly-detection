@@ -4,13 +4,13 @@ from typing import Any, Dict, Tuple, Type
 import torch.nn.functional as F
 import numpy
 import torch
-from FrEIA.framework import InputNode, Node, OutputNode
-from FrEIA.modules import PermuteRandom
+# from FrEIA.framework import InputNode, Node, OutputNode
+# from FrEIA.modules import PermuteRandom
 from torch import Tensor, nn
 
 from configuration import Configuration
-from coupling_layers import CouplingBlock
-from graph_inn import GraphINN
+# from coupling_layers import CouplingBlock
+# from graph_inn import GraphINN
 
 
 def get_loss(inputs: Tensor, outputs: Tensor) -> Tensor:
@@ -203,50 +203,50 @@ class InternalNetwork(torch.nn.Module):
         return outputs
 
 
-class NormalizingFlow(GraphINN):
-    """Describes the normalizing flow model."""
+# class NormalizingFlow(GraphINN):
+#     """Describes the normalizing flow model."""
 
-    def __init__(self, input_dimension: Tuple[int, ...], config: Configuration) -> None:
-        """Initializes the normalizing flow model.
+#     def __init__(self, input_dimension: Tuple[int, ...], config: Configuration) -> None:
+#         """Initializes the normalizing flow model.
 
-        Args:
-            input_dimension: The input dimensions.
-            config: The configuration of the model.
-        """
-        nodes = [InputNode(*input_dimension, name="input")]
+#         Args:
+#             input_dimension: The input dimensions.
+#             config: The configuration of the model.
+#         """
+#         nodes = [InputNode(*input_dimension, name="input")]
 
-        int_network = InternalNetwork.setup(
-            input_dimension[1],
-            input_dimension[0],
-            n_hidden_layers=config.n_hidden_layers,
-            scale=config.scale,
-            kernel_size_1=config.kernel_size_1,
-            dilation_1=config.dilation_1,
-            kernel_size_2=config.kernel_size_2,
-            dilation_2=config.dilation_2,
-            kernel_size_3=config.kernel_size_3,
-            dilation_3=config.dilation_3,
-        )
+#         int_network = InternalNetwork.setup(
+#             input_dimension[1],
+#             input_dimension[0],
+#             n_hidden_layers=config.n_hidden_layers,
+#             scale=config.scale,
+#             kernel_size_1=config.kernel_size_1,
+#             dilation_1=config.dilation_1,
+#             kernel_size_2=config.kernel_size_2,
+#             dilation_2=config.dilation_2,
+#             kernel_size_3=config.kernel_size_3,
+#             dilation_3=config.dilation_3,
+#         )
 
-        for cbi in range(config.n_coupling_blocks):
-            kwargs: Dict[Any, Any] = {}
+#         for cbi in range(config.n_coupling_blocks):
+#             kwargs: Dict[Any, Any] = {}
 
-            nodes.append(
-                Node(nodes[-1], PermuteRandom, kwargs, name=f"permute{cbi}"),
-            )
-            nodes.append(
-                Node(
-                    nodes[-1],
-                    CouplingBlock,
-                    {
-                        "subnet_constructor": int_network.constructor,
-                        "clamp": config.clamp,
-                    },
-                    name=f"cb{cbi}",
-                )
-            )
+#             nodes.append(
+#                 Node(nodes[-1], PermuteRandom, kwargs, name=f"permute{cbi}"),
+#             )
+#             nodes.append(
+#                 Node(
+#                     nodes[-1],
+#                     CouplingBlock,
+#                     {
+#                         "subnet_constructor": int_network.constructor,
+#                         "clamp": config.clamp,
+#                     },
+#                     name=f"cb{cbi}",
+#                 )
+#             )
 
-        output_node = OutputNode(nodes[-1], name="output")
-        nodes.append(output_node)
+#         output_node = OutputNode(nodes[-1], name="output")
+#         nodes.append(output_node)
 
-        super().__init__(nodes)
+#         super().__init__(nodes)
